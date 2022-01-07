@@ -1,0 +1,48 @@
+version: "3"
+services:
+  mysqldb:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - 3366:3306
+    environment:
+      MYSQL_DATABASE: easycoachdb
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+    volumes:
+      - mysql-data:/var/lib/mysql
+    restart: always
+  easycoachapi:
+    image: rubinhomaroti/easycoachapi
+    links:
+      - mysqldb:mysqldb
+    depends_on:
+      - mysqldb
+    restart: always
+    ports:
+      - 8099:8099
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysqldb:3306/easycoachdb?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQL8Dialect
+      - SPRING_JPA_HIBERNATE_DDL-AUTO=none
+  easycoachauth:
+    image: rubinhomaroti/easycoachauth
+    links:
+      - mysqldb:mysqldb
+    depends_on:
+      - mysqldb
+      - easycoachapi
+    restart: on-failure
+    ports:
+      - 8098:8098
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysqldb:3306/easycoachdb?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQL8Dialect
+      - SPRING_JPA_HIBERNATE_DDL-AUTO=none
+volumes:
+  mysql-data: {}
